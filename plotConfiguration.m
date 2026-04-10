@@ -9,7 +9,7 @@ INPUT:
 %}
     figure('Name', 'PaTS-Wheel Mechanism Animation', 'NumberTitle', 'off');
     set(gcf, 'Position', [100, 100, 800, 500]); % Make window nice and wide
-    
+
     % Loop through the solution over time
     for i = 1:plot_stepsize:length(time)
         % 1. Extract coordinates for this time step
@@ -39,10 +39,10 @@ INPUT:
         % Calculate aesthetic tips for the Claw (c) and Pad (p)
         % Using true +90 degree perpendicular projection to force them UP and INWARD
         tip_height = L_vals(6); 
-        
+
         % Claw tip (c) anchored to b3, pointing UP (+) and INWARD (-)
         c = [b3(1) - tip_height*sin(th3), b3(2) + tip_height*cos(th3)]; 
-        
+
         % Pad tip (p) anchored to a2, pointing UP (+) and INWARD (-)
         p = [a2(1) - tip_height*sin(th5), a2(2) + tip_height*cos(th5)];
 
@@ -51,14 +51,14 @@ INPUT:
         hold on;
         grid on;
         axis equal;
-        
+
         % Set plot limits 
         axis([-0.20 0.20 -0.05 0.25]);
         title(sprintf('PaTS-Wheel Simulation | Time = %.2f s', time(i)));
         xlabel('X Position [m]'); ylabel('Y Position [m]');
 
         % --- Plot Links as Polygons/Lines ---
-        
+
         % Body 1: Central Inverting Coupler (Triangle: b3 - O - a2)
         plot([b3(1), O(1), a2(1), b3(1)], [b3(2), O(2), a2(2), b3(2)], 'k-', 'LineWidth', 2.5);
         fill([b3(1), O(1), a2(1)], [b3(2), O(2), a2(2)], [0.8 0.8 0.8], 'FaceAlpha', 0.5); % Gray fill

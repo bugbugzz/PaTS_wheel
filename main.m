@@ -122,7 +122,8 @@ for i = 1:5
 end
 
 %% 6. VISUALIZATION & PLOTTING
-plotConfiguration(qSol, time, L_vals, 20);
+% plotConfiguration(qSol, time, L_vals, 20);
+plotMovingLinksAnimation(qSol, time, L_vals, 50);
 plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
 plotReactionForces(Qc, time); 
 
