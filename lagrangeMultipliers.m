@@ -7,7 +7,7 @@ function [lambda] = lagrangeMultipliers(q,ddq,t,Cq_f,M)
     W_robot = 1.3 * g; % ~12.75 Newtons
     
     Qa(2)  = -(W_robot * 0.50); % 50% load on central hub
-    Qa(5)  = -(W_robot * 0.25); % 25% load on claw support pin
+    Qa(5)  = -(W_robot * 0.25); %25% load on claw support pin
     Qa(11) = -(W_robot * 0.25); % 25% load on pad support pin
 
     % The Claw Tip (Body 3, Y-index: 8) is hooked on the 18cm step.

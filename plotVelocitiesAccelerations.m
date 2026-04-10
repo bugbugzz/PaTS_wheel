@@ -1,46 +1,53 @@
-function plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol)
+function plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol)
 %{
 This function plots the velocities and accelerations for the 5 bodies
-of the PaTS-Wheel mechanism, AND the specific Claw/Pad tips.
+of the PaTS-Wheel mechanism AND the specific Claw/Pad tips in the same plots.
 %}
 
-    % --- 1. CM VELOCITIES FIGURE ---
-    figure('Name', 'PaTS-Wheel: CM Velocities', 'NumberTitle', 'off');
-    subplot(2,1,1); hold on; grid on;
+    % --- 1. VELOCITIES FIGURE ---
+    figure('Name', 'PaTS-Wheel: Velocities', 'NumberTitle', 'off');
+    
+    % X Velocities
+    subplot(3,1,1); hold on; grid on;
     plot(time, dqSol(1,:), time, dqSol(4,:), time, dqSol(7,:), time, dqSol(10,:), time, dqSol(13,:), 'LineWidth', 1.5);
-    title('Center of Mass X - Velocities'); ylabel('v_x [m/s]');
-    legend('Coupler (B1)', 'Claw Support (B2)', 'Claw Tip (B3)', 'Pad Support (B4)', 'Pad Tip (B5)', 'Location', 'bestoutside');
+    plot(time, v_c_sol(1,:), 'g--', 'LineWidth', 2); % Claw Tip
+    plot(time, v_p_sol(1,:), 'm--', 'LineWidth', 2); % Pad Tip
+    title('X - Velocities (CM and Tips)'); ylabel('v_x [m/s]');
+    legend('B1 (Coupler)', 'B2 (Claw Supp)', 'B3 (Claw Tip)', 'B4 (Pad Supp)', 'B5 (Pad Tip)', 'Claw Hook (c)', 'Pad Push (p)', 'Location', 'bestoutside');
     
-    subplot(2,1,2); hold on; grid on;
+    % Y Velocities
+    subplot(3,1,2); hold on; grid on;
     plot(time, dqSol(2,:), time, dqSol(5,:), time, dqSol(8,:), time, dqSol(11,:), time, dqSol(14,:), 'LineWidth', 1.5);
-    title('Center of Mass Y - Velocities'); ylabel('v_y [m/s]'); xlabel('Time [s]');
+    plot(time, v_c_sol(2,:), 'g--', 'LineWidth', 2); % Claw Tip
+    plot(time, v_p_sol(2,:), 'm--', 'LineWidth', 2); % Pad Tip
+    title('Y - Velocities (CM and Tips)'); ylabel('v_y [m/s]');
+    
+    % Angular Velocities (Tips share the angular velocity of their parent bodies)
+    subplot(3,1,3); hold on; grid on;
+    plot(time, dqSol(3,:), time, dqSol(6,:), time, dqSol(9,:), time, dqSol(12,:), time, dqSol(15,:), 'LineWidth', 1.5);
+    title('Angular Velocities'); ylabel('\omega [rad/s]'); xlabel('Time [s]');
 
-    % --- 2. CM ACCELERATIONS FIGURE ---
-    figure('Name', 'PaTS-Wheel: CM Accelerations', 'NumberTitle', 'off');
-    subplot(2,1,1); hold on; grid on;
+
+    % --- 2. ACCELERATIONS FIGURE ---
+    figure('Name', 'PaTS-Wheel: Accelerations', 'NumberTitle', 'off');
+    
+    % X Accelerations
+    subplot(3,1,1); hold on; grid on;
     plot(time, ddqSol(1,:), time, ddqSol(4,:), time, ddqSol(7,:), time, ddqSol(10,:), time, ddqSol(13,:), 'LineWidth', 1.5);
-    title('Center of Mass X - Accelerations'); ylabel('a_x [m/s^2]');
-    legend('Coupler (B1)', 'Claw Support (B2)', 'Claw Tip (B3)', 'Pad Support (B4)', 'Pad Tip (B5)', 'Location', 'bestoutside');
+    plot(time, a_c_sol(1,:), 'g--', 'LineWidth', 2); % Claw Tip
+    plot(time, a_p_sol(1,:), 'm--', 'LineWidth', 2); % Pad Tip
+    title('X - Accelerations (CM and Tips)'); ylabel('a_x [m/s^2]');
+    legend('B1 (Coupler)', 'B2 (Claw Supp)', 'B3 (Claw Tip)', 'B4 (Pad Supp)', 'B5 (Pad Tip)', 'Claw Hook (c)', 'Pad Push (p)', 'Location', 'bestoutside');
     
-    subplot(2,1,2); hold on; grid on;
+    % Y Accelerations
+    subplot(3,1,2); hold on; grid on;
     plot(time, ddqSol(2,:), time, ddqSol(5,:), time, ddqSol(8,:), time, ddqSol(11,:), time, ddqSol(14,:), 'LineWidth', 1.5);
-    title('Center of Mass Y - Accelerations'); ylabel('a_y [m/s^2]'); xlabel('Time [s]');
-
-    % --- 3. NEW: TIP KINEMATICS FIGURE ---
-    figure('Name', 'PaTS-Wheel: Hook Tips (c and p)', 'NumberTitle', 'off');
+    plot(time, a_c_sol(2,:), 'g--', 'LineWidth', 2); % Claw Tip
+    plot(time, a_p_sol(2,:), 'm--', 'LineWidth', 2); % Pad Tip
+    title('Y - Accelerations (CM and Tips)'); ylabel('a_y [m/s^2]');
     
-    % X Velocities of the Tips
-    subplot(2,1,1); hold on; grid on;
-    plot(time, v_c_sol(1,:), 'g-', 'LineWidth', 2);
-    plot(time, v_p_sol(1,:), 'm-', 'LineWidth', 2);
-    title('Tip X-Velocities (Horizontal Reach)'); 
-    ylabel('Velocity [m/s]');
-    legend('Claw Tip (c)', 'Pad Tip (p)', 'Location', 'best');
-    
-    % Y Velocities of the Tips
-    subplot(2,1,2); hold on; grid on;
-    plot(time, v_c_sol(2,:), 'g--', 'LineWidth', 2);
-    plot(time, v_p_sol(2,:), 'm--', 'LineWidth', 2);
-    title('Tip Y-Velocities (Vertical Lift)'); 
-    ylabel('Velocity [m/s]'); xlabel('Time [s]');
+    % Angular Accelerations
+    subplot(3,1,3); hold on; grid on;
+    plot(time, ddqSol(3,:), time, ddqSol(6,:), time, ddqSol(9,:), time, ddqSol(12,:), time, ddqSol(15,:), 'LineWidth', 1.5);
+    title('Angular Accelerations'); ylabel('\alpha [rad/s^2]'); xlabel('Time [s]');
 end

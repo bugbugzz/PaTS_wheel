@@ -1,6 +1,6 @@
 clear all; close all; clc;
 
-%% 1. ALIGNED PARAMETERS (18cm Climb / 257mm Diameter)
+%% 1. ALIGNED PARAMETERS
 scale = 2.57; % Scales the 100mm base to 257mm
 L_vals = ([50; 25; 50; 25; 25; 25; 25; 25] * scale) / 1000; 
 
@@ -106,20 +106,25 @@ a_c_sol = [diff(v_c_sol, 1, 2) / dt, [0;0]];
 a_p_sol = [diff(v_p_sol, 1, 2) / dt, [0;0]];
 
 % Calculate Internal Stress (Axial vs Bending)
-[~, s_axial, s_bend, SF] = calculateLinkStresses(Qc, b_flex, h_flex, TPU_yield);
+[~, s_axial, s_bend, SF] = calculateLinkStresses(Qc, b_flex, h_flex, TPU_yield, L_vals);
 
 % Print the Report to Console
 fprintf('\n--- STRESS REPORT: 1.3kg Robot Climbing 18cm Step ---\n');
-fprintf('%-18s | %-12s | %-12s | %-8s\n', 'Body Name', 'Axial (MPa)', 'Bending (MPa)', 'SF');
+fprintf('%-18s | %-12s | %-12s | %-8s\n', 'Flexure Node', 'Axial (MPa)', 'Bending (MPa)', 'SF');
 fprintf('------------------------------------------------------------\n');
-body_names = {'Coupler', 'Claw Support', 'Claw Tip', 'Pad Support', 'Pad Tip'};
+
+% Renamed to reflect the exact joints/notches being calculated
+node_names = {'Coupler Hinge', 'Claw Base Hinge', 'Claw Tip Hinge', 'Pad Base Hinge', 'Pad Tip Hinge'};
+
 for i = 1:5
     fprintf('%-18s | %-12.4f | %-12.4f | %-8.2f\n', ...
-            body_names{i}, max(s_axial(i,:))/1e6, max(s_bend(i,:))/1e6, SF(i));
+            node_names{i}, max(s_axial(i,:))/1e6, max(s_bend(i,:))/1e6, SF(i));
 end
 
 %% 6. VISUALIZATION & PLOTTING
 plotConfiguration(qSol, time, L_vals, 20);
 plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
-plotReactionForces(Qc, time);   
+plotReactionForces(Qc, time); 
+
+printSystemParameters(L_vals, b_flex, h_flex, scale);
 disp('Simulation Complete.');
