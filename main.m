@@ -6,8 +6,9 @@ L_vals = ([50; 25; 50; 25; 25; 25; 25; 25] * scale) / 1000; % Convert lengths fr
 
 % Flexure Design (The TPU Notches used for Stress Analysis later)
 b_flex = 20 / 1000; % 20mm wide (the depth/extrusion of the wheel)
-h_flex = 3 / 1000;  % 3mm thick (the thin flexible notch)
-TPU_yield = 20e6;   % 20 MPa yield strength limit for TPU 95A
+% h_flex = 3 / 1000;  % 3mm thick (the thin flexible notch)
+% Flexure Thickness Array [Coupler, Claw Base, Claw Tip, Pad Base, Pad Tip]
+h_flex = [2.0; 1.5; 3.0; 1.5; 1.5] / 1000;TPU_yield = 20e6;   % 20 MPa yield strength limit for TPU 95A
 
 % Mass & Inertia Properties (Treating the 5 links as rigid cylinders)
 rho_tpu = 1200;       % Density of TPU [kg/m^3]
@@ -144,8 +145,85 @@ end
 plotConfiguration(qSol, time, L_vals, 20);
 
 % Optional plotting scripts (uncomment to use)
-% plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
-% plotReactionForces(Qc, time); 
+plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
+plotReactionForces(Qc, time); 
 
 printSystemParameters(L_vals, b_flex, h_flex, scale);
 disp('Simulation Complete.');
+
+%% 7. ACTIVATION FORCE CALCULATION (Pad Push Force)
+disp('Calculating Required Pad Activation Force...');
+
+% 1. TPU Material Properties for Stiffness
+E_tpu = 25e6; % Young's Modulus for TPU 95A (~25 MPa)
+L_notch = 20 / 1000; % Assuming the flexure bending zone is 3mm long
+
+% 2. Calculate Torsional Spring Constant (k) [Nm / rad]
+% I_flex = (b_flex * h_flex^3) / 12; 
+% k_spring = (E_tpu * I_flex) / L_notch; 
+
+I_flex_array = (b_flex .* h_flex.^3) / 12; 
+k_spring = (E_tpu .* I_flex_array) / L_notch;
+% Arrays to store the forces
+F_pad_required = zeros(1, length(time));
+Total_Hinge_Torque = zeros(1, length(time));
+
+
+
+for i = 1:length(time)
+    q = qSol(:, i);
+    dq = dqSol(:, i);
+    
+    % Extract Absolute Angles
+    th1 = q(3); th2 = q(6); th3 = q(9); th4 = q(12); th5 = q(15);
+    dth1 = dq(3); dth2 = dq(6); dth3 = dq(9); dth4 = dq(12); dth5 = dq(15);
+    
+    % Baseline/Starting Angles (from t=0)
+    th1_0 = qSol(3,1); th2_0 = qSol(6,1); th3_0 = qSol(9,1); 
+    th4_0 = qSol(12,1); th5_0 = qSol(15,1);
+    
+    % Calculate relative angle differences (Delta Theta) from the start state
+    % (How much has each joint bent?)
+    bend_13 = abs((th3 - th1) - (th3_0 - th1_0)); % Hub to Claw Hook
+    bend_23 = abs((th3 - th2) - (th3_0 - th2_0)); % Claw Support to Claw Hook
+    bend_15 = abs((th5 - th1) - (th5_0 - th1_0)); % Hub to Pad Foot
+    bend_45 = abs((th5 - th4) - (th5_0 - th4_0)); % Pad Support to Pad Foot
+    
+    % Calculate Torques (tau = k * dTheta)
+    % tau_13 = k_spring * bend_13;
+    % tau_23 = k_spring * bend_23;
+    % tau_15 = k_spring * bend_15;
+    % tau_45 = k_spring * bend_45;
+    tau_13 = k_spring(1) * bend_13; % Coupler
+    tau_23 = k_spring(2) * bend_23; % Claw Support
+    tau_15 = k_spring(3) * bend_15; % Claw Tip (Uses the 3.0mm stiffness)
+    tau_45 = k_spring(4) * bend_45; % Pad Support
+    % Calculate Relative Angular Velocities (omega)
+    w_13 = abs(dth3 - dth1);
+    w_23 = abs(dth3 - dth2);
+    w_15 = abs(dth5 - dth1);
+    w_45 = abs(dth5 - dth4);
+    
+    % Total Internal Mechanical Power (Sum of Torque * Omega)
+    Power_internal = (tau_13 * w_13) + (tau_23 * w_23) + (tau_15 * w_15) + (tau_45 * w_45);
+    
+    % Pad Horizontal Velocity (from your existing v_p_sol)
+    v_pad_x = abs(v_p_sol(1, i)); 
+    
+    % Principle of Virtual Work: Power_in = Power_internal
+    % F_pad * v_pad_x = Power_internal
+    if v_pad_x > 1e-4 % Prevent division by zero when starting
+        F_pad_required(i) = Power_internal / v_pad_x;
+    else
+        F_pad_required(i) = 0;
+    end
+end
+
+% Plotting the Force
+figure('Name', 'Required Activation Force', 'Color', 'w');
+plot(time, F_pad_required, 'LineWidth', 3, 'Color', [0.85 0.325 0.098]);
+grid on;
+title('Force Required at Pad to Unfold Wheel');
+xlabel('Time [s]');
+ylabel('Push Force [Newtons]');
+yline(12.75, 'r--', 'Robot Weight (1.3kg)'); % Reference line
