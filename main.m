@@ -134,53 +134,82 @@ a_p_sol = [diff(v_p_sol, 1, 2) / dt, [0;0]];
 % Run PRBM analysis and fetch safety factors
 [~, s_axial, s_bend, SF] = calculateLinkStresses(Qc, b_flex, h_flex, TPU_yield, L_vals);
 
-%% 6. ACTIVATION FORCE CALCULATION (Virtual Work)
-disp('Calculating Required Pad Activation Force...');
+%% 6. ACTIVATION FORCE CALCULATION (Inverse Dynamics FMD Matrix Method)
+disp('Calculating Required Pad Activation Force via FMD Matrix...');
+
 % Pre-calculate torsional stiffness (k) for all active flexures [Nm/rad]
 I_flex_array = (b_flex .* h_flex.^3) / 12; 
 k_spring = (E_tpu .* I_flex_array) / L_notch;
+
 F_pad_required = zeros(1, length(time));
-Total_Hinge_Torque = zeros(1, length(time));
+Q_springs = zeros(15, 1);
+
 for i = 1:length(time)
     q = qSol(:, i);
     dq = dqSol(:, i);
+    ddq = ddqSol(:, i);
     
-    % Unpack absolute angles and velocities
+    % Unpack absolute angles
     th1 = q(3); th2 = q(6); th3 = q(9); th4 = q(12); th5 = q(15);
-    dth1 = dq(3); dth2 = dq(6); dth3 = dq(9); dth4 = dq(12); dth5 = dq(15);
     
     % Define the unstrained neutral state from t=0
     th1_0 = qSol(3,1); th2_0 = qSol(6,1); th3_0 = qSol(9,1); 
     th4_0 = qSol(12,1); th5_0 = qSol(15,1);
     
-    % Calculate geometric bending (Delta Theta) at each hinge connection
-    bend_13 = abs((th3 - th1) - (th3_0 - th1_0)); 
-    bend_23 = abs((th3 - th2) - (th3_0 - th2_0)); 
-    bend_15 = abs((th5 - th1) - (th5_0 - th1_0)); 
-    bend_45 = abs((th5 - th4) - (th5_0 - th4_0)); 
+    % Calculate geometric bending (Delta Theta) preserving directional signs
+    delta_13 = (th3 - th1) - (th3_0 - th1_0); 
+    delta_23 = (th3 - th2) - (th3_0 - th2_0); 
+    delta_15 = (th5 - th1) - (th5_0 - th1_0); 
+    delta_45 = (th5 - th4) - (th5_0 - th4_0); 
     
-    % Calculate resisting torques using correct mapped array indices
-    % Note: Index 3 is skipped as it represents the solid Claw Tip geometry
-    tau_13 = k_spring(1) * bend_13; % Index 1: Coupler Hinge
-    tau_23 = k_spring(2) * bend_23; % Index 2: Claw Base Hinge
-    tau_15 = k_spring(4) * bend_15; % Index 4: Pad Base Hinge
-    tau_45 = k_spring(5) * bend_45; % Index 5: Pad Tip Hinge
+    % Build the Q_springs vector (Applying spring moments to rigid bodies)
+    Q_springs(:) = 0;
     
-    % Calculate instantaneous angular velocities of the bends
-    w_13 = abs(dth3 - dth1);
-    w_23 = abs(dth3 - dth2);
-    w_15 = abs(dth5 - dth1);
-    w_45 = abs(dth5 - dth4);
+    % Index 1: Coupler Hinge (Between Body 1 and 3)
+    M_13 = k_spring(1) * delta_13;
+    Q_springs(3)  = Q_springs(3)  + M_13; % Torque acts on Hub
+    Q_springs(9)  = Q_springs(9)  - M_13; % Equal & opposite torque acts on Claw
     
-    % Balance internal power against horizontal pad displacement
-    Power_internal = (tau_13 * w_13) + (tau_23 * w_23) + (tau_15 * w_15) + (tau_45 * w_45);
-    v_pad_x = abs(v_p_sol(1, i)); 
+    % Index 2: Claw Base Hinge (Between Body 2 and 3)
+    M_23 = k_spring(2) * delta_23;
+    Q_springs(6)  = Q_springs(6)  + M_23; % Torque acts on Claw Support
+    Q_springs(9)  = Q_springs(9)  - M_23; % Equal & opposite acts on Claw
     
-    if v_pad_x > 1e-4 
-        F_pad_required(i) = Power_internal / v_pad_x;
-    else
-        F_pad_required(i) = 0; % Mitigate division-by-zero math artifacts
-    end
+    % Index 4: Pad Base Hinge (Between Body 1 and 5)
+    M_15 = k_spring(4) * delta_15;
+    Q_springs(3)  = Q_springs(3)  + M_15; % Torque acts on Hub
+    Q_springs(15) = Q_springs(15) - M_15; % Equal & opposite acts on Pad
+    
+    % Index 5: Pad Tip Hinge (Between Body 4 and 5)
+    M_45 = k_spring(5) * delta_45;
+    Q_springs(12) = Q_springs(12) + M_45; % Torque acts on Pad Support
+    Q_springs(15) = Q_springs(15) - M_45; % Equal & opposite acts on Pad
+    
+    % ---------------------------------------------------------------------
+    % INVERSE DYNAMICS MATRIX SOLVER
+    % ---------------------------------------------------------------------
+    % 1. Extract the Jacobian vector mapping to the Pad's Horizontal Position
+    Jp = Jp_f(q); 
+    J_pad_x = Jp(1, :)'; % Transpose into a 15x1 column vector
+    
+    % 2. Re-evaluate Motor Angle & Full Jacobian for this specific timestep
+    th_val = A_theta * sin(2 * pi * freq * time(i)); 
+    Cq_full = Cq_f(q, time(i), th_val);
+    
+    % 3. Isolate the 14 Geometric Pin Constraints (ignore the motor constraint)
+    Cq_geom = Cq_full(1:14, :); % 14x15 matrix 
+    
+    % 4. Construct the 15x15 System Matrix: [Geometric Pins, Pad Force Vector]
+    A_matrix = [Cq_geom', J_pad_x]; 
+    
+    % 5. Construct the Knowns Vector: Inertial Forces minus Spring Forces
+    B_vector = (M * ddq) - Q_springs;
+    
+    % 6. Solve the linear system simultaneously for all 15 variables
+    Unknowns = A_matrix \ B_vector;
+    
+    % 7. The 15th variable solved is the required Push Force on the Pad!
+    F_pad_required(i) = abs(Unknowns(15));
 end
 
 %% 7. OUTPUTS, REPORTS & FIGURES
