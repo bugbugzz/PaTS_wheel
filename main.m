@@ -27,7 +27,15 @@ th4_0 = 1.0;                % Pad support initial start angle (rad)
 % Array of Flexure Thicknesses [Indices 1 to 5] (m)
 h_flex = [2.0; 1.5; 3.0; 1.5; 1.5] / 1000; 
 % Array of Link Lengths (m)
-% L_vals = [L1; L2; L3; L4; L5; L6; L7; L8]
+% L_vals mapping based on geometric constraints:
+% L1: Hub-to-Claw-Pivot offset (m)
+% L2: Hub-to-Pad-Joint radius (m)
+% L3: Hub-to-Pad-Pivot offset (m)
+% L4: Hub-to-Claw-Joint radius (m)
+% L5: Claw Support length (m)
+% L6: Tip Body length (Claw/Pad) (m)
+% L7: Unused in constraints (m)
+% L8: Pad Support length (m)
 L_vals = ([50; 25; 50; 25; 25; 25; 25; 25] * scale) / 1000; 
 
 %% 2. INITIALIZATION & SYMBOLIC SETUP

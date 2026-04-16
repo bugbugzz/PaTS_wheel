@@ -9,7 +9,7 @@ function [lambda] = lagrangeMultipliers(q,ddq,t,Cq_f,M)
     end
 
     % 2. EXTERNAL ROBOT LOAD (The 1.3kg Robot)
-    % We apply the robot weight to the chassis pins
+    % apply the robot weight to the chassis pins
     W_robot = 1.3 * g; 
     Qa(2)  = Qa(2)  - (W_robot * 0.50); % 50% on central hub
     Qa(5)  = Qa(5)  - (W_robot * 0.25); % 25% on claw support
