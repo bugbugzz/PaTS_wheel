@@ -31,7 +31,7 @@ function printSystemParameters(L_vals, b_flex, h_flex, scale)
     
     fprintf('\n--- strength requirements ---\n');
     fprintf('Robot Weight Support:  1.3 kg\n');
-    fprintf('TPU_yield = 37.9 MPa\n');
+    fprintf('TPU strength = 37.9 MPa\n');
 
     fprintf('============================================================\n');
 end

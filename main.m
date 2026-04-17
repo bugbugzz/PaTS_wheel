@@ -19,7 +19,7 @@ th4_0 = 1.0;                % Pad support initial start angle (rad)
 % flexure
 b_flex = 20 / 1000;         % flexure width/depth (m)
 % Array of Flexure Thicknesses [Indices 1 to 5] (m)
-h_flex = [2.5; 1.5; 3.0; 1.5; 1.5] / 1000; 
+h_flex = [1.5; 1; 3.0; 1; 1.] / 1000;% Array of Link Lengths (m)
 
 % ridgit link
 % Array of Link Lengths (m)
@@ -166,5 +166,5 @@ disp('Simulation Complete.');
 
 % 6.2 Plotting & Visualization
 plotConfiguration(qSol, time, L_vals, 20);
-% plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
-% plotReactionForces(Qc, time); 
+plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
+plotReactionForces(Qc, time); 
