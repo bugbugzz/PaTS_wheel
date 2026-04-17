@@ -142,57 +142,8 @@ a_p_sol = [diff(v_p_sol, 1, 2) / dt, [0;0]];
 % Run PRBM analysis and fetch safety factors
 [~, s_axial, s_bend, SF] = calculateLinkStresses(Qc, b_flex, h_flex, TPU_yield, L_vals);
 
-%% 6. ACTIVATION FORCE CALCULATION (Virtual Work)
-disp('Calculating Required Pad Activation Force...');
-% Pre-calculate torsional stiffness (k) for all active flexures [Nm/rad]
-I_flex_array = (b_flex .* h_flex.^3) / 12; 
-k_spring = (E_tpu .* I_flex_array) / L_notch;
-F_pad_required = zeros(1, length(time));
-Total_Hinge_Torque = zeros(1, length(time));
-for i = 1:length(time)
-    q = qSol(:, i);
-    dq = dqSol(:, i);
-    
-    % Unpack absolute angles and velocities
-    th1 = q(3); th2 = q(6); th3 = q(9); th4 = q(12); th5 = q(15);
-    dth1 = dq(3); dth2 = dq(6); dth3 = dq(9); dth4 = dq(12); dth5 = dq(15);
-    
-    % Define the unstrained neutral state from t=0
-    th1_0 = qSol(3,1); th2_0 = qSol(6,1); th3_0 = qSol(9,1); 
-    th4_0 = qSol(12,1); th5_0 = qSol(15,1);
-    
-    % Calculate geometric bending (Delta Theta) at each hinge connection
-    bend_13 = abs((th3 - th1) - (th3_0 - th1_0)); 
-    bend_23 = abs((th3 - th2) - (th3_0 - th2_0)); 
-    bend_15 = abs((th5 - th1) - (th5_0 - th1_0)); 
-    bend_45 = abs((th5 - th4) - (th5_0 - th4_0)); 
-    
-    % Calculate resisting torques using correct mapped array indices
-    % Note: Index 3 is skipped as it represents the solid Claw Tip geometry
-    tau_13 = k_spring(1) * bend_13; % Index 1: Coupler Hinge
-    tau_23 = k_spring(2) * bend_23; % Index 2: Claw Base Hinge
-    tau_15 = k_spring(4) * bend_15; % Index 4: Pad Base Hinge
-    tau_45 = k_spring(5) * bend_45; % Index 5: Pad Tip Hinge
-    
-    % Calculate instantaneous angular velocities of the bends
-    w_13 = abs(dth3 - dth1);
-    w_23 = abs(dth3 - dth2);
-    w_15 = abs(dth5 - dth1);
-    w_45 = abs(dth5 - dth4);
-    
-    % Balance internal power against horizontal pad displacement
-    Power_internal = (tau_13 * w_13) + (tau_23 * w_23) + (tau_15 * w_15) + (tau_45 * w_45);
-    v_pad_x = abs(v_p_sol(1, i)); 
-    
-    if v_pad_x > 1e-4 
-        F_pad_required(i) = Power_internal / v_pad_x;
-    else
-        F_pad_required(i) = 0; % Mitigate division-by-zero math artifacts
-    end
-end
-
-%% 7. OUTPUTS, REPORTS & FIGURES
-% --- 7.1 Console Reports ---
+%% 6. OUTPUTS, REPORTS & FIGURES
+% 6.1 Console print
 fprintf('\n--- STRESS REPORT: 1.3kg Robot Climbing 18cm Step ---\n');
 fprintf('%-25s | %-12s | %-12s | %-8s\n', 'Flexure Node', 'Axial (MPa)', 'Bending (MPa)', 'SF');
 fprintf('----------------------------------------------------------------------\n');
@@ -206,15 +157,7 @@ end
 printSystemParameters(L_vals, b_flex, h_flex, scale);
 disp('Simulation Complete.');
 
-% --- 7.2 Plotting & Visualization ---
+% 6.2 Plotting & Visualization
 plotConfiguration(qSol, time, L_vals, 20);
 % plotVelocitiesAccelerations(dqSol, ddqSol, time, v_c_sol, v_p_sol, a_c_sol, a_p_sol);
 % plotReactionForces(Qc, time); 
-
-figure('Name', 'Required Activation Force', 'Color', 'w');
-plot(time, F_pad_required, 'LineWidth', 3, 'Color', [0.85 0.325 0.098]);
-grid on;
-title('Force Required at Pad to Unfold Wheel');
-xlabel('Time [s]');
-ylabel('Push Force [Newtons]');
-yline(12.75, 'r--', 'Robot Weight (1.3kg)');
