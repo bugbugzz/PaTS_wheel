@@ -9,11 +9,10 @@ clear all; close all; clc;
 % Index 4: Pad Base Hinge    (Connects Hub Link 1 to Pad Link 5)
 % Index 5: Pad Tip Hinge     (Connects Base Link 4 to Pad Link 5)
 % -------------------------------------------------------------------------
-% TPU_yield = 20e6;           % TPU 95A yield strength (Pa)
 
 scale = 2.57;               % Multiplier to clear 18cm step (scales base 100mm design)
-b_flex = 20 / 1000;         % Wheel extrusion depth (m)
-L_notch = 8 / 1000;         % Bending zone length for virtual work (m)
+b_flex = 20 / 1000;         % flexure width/depth (m)
+% L_notch = 8 / 1000;         % Bending zone length for virtual work (m)
 D = 10 / 1000;              % Diameter of rigid link segments (m)
 rho_tpu = 1200;             % TPU density (kg/m^3)
 E_tpu = 25e6;               % TPU Young's Modulus (Pa)
@@ -26,7 +25,7 @@ th1_0 = 0.7;                % Hub/Motor initial start angle (rad)
 th2_0 = 2.0;                % Claw support initial start angle (rad)
 th4_0 = 1.0;                % Pad support initial start angle (rad)
 % Array of Flexure Thicknesses [Indices 1 to 5] (m)
-h_flex = [2.0; 1.5; 3.0; 1.5; 1.5] / 1000; 
+h_flex = [2.5; 1.5; 3.0; 1.5; 1.5] / 1000; 
 % Array of Link Lengths (m)
 % L_vals mapping based on geometric constraints:
 % L1: Hub-to-Claw-Pivot offset (m)
