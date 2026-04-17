@@ -10,10 +10,10 @@ clear all; close all; clc;
 % Index 5: Pad Tip Hinge     (Connects Base Link 4 to Pad Link 5)
 % -------------------------------------------------------------------------
 scale = 2.57;               % Multiplier to clear 18cm step (scales base 100mm design)
-b_flex = 20 / 1000;         % Wheel extrusion depth (m)
+b_flex = 20 / 1000;         % flexure extrusion width (m)
 L_notch = 8 / 1000;         % Bending zone length for virtual work (m)
 D = 10 / 1000;              % Diameter of rigid link segments (m)
-TPU_yield = 20e6;           % TPU 95A yield strength (Pa)
+TPU_yield = 26e6;           % TPU 95A yield strength (Pa)
 rho_tpu = 1200;             % TPU density (kg/m^3)
 E_tpu = 25e6;               % TPU Young's Modulus (Pa)
 t_start = 0;                % Simulation start time (s)
