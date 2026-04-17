@@ -1,31 +1,27 @@
 clear all; close all; clc;
 
-%% 1. SYSTEM PARAMETERS & CONFIGURATION
+%% 1. SYSTEM CONFIGURATION
 % -------------------------------------------------------------------------
-% HINGE & BODY INDEX MAP (Used for h_flex, m, I, Qc, M, and Stress Output)
+% INDEX MAP (Used for h_flex, m, I, Qc, M, and Stress Output)
 % Index 1: Coupler Hinge     (Connects Hub Link 1 to Claw Link 3)
 % Index 2: Claw Base Hinge   (Connects Base Link 2 to Claw Link 3)
 % Index 3: Claw Tip Body     (Solid geometry hook, does NOT bend)
 % Index 4: Pad Base Hinge    (Connects Hub Link 1 to Pad Link 5)
 % Index 5: Pad Tip Hinge     (Connects Base Link 4 to Pad Link 5)
 % -------------------------------------------------------------------------
-
+% geometry
 scale = 2.57;               % Multiplier to clear 18cm step (scales base 100mm design)
-b_flex = 20 / 1000;         % flexure width/depth (m)
-% L_notch = 8 / 1000;         % Bending zone length for virtual work (m)
-D = 10 / 1000;              % Diameter of rigid link segments (m)
-rho_tpu = 1200;             % TPU density (kg/m^3)
-E_tpu = 25e6;               % TPU Young's Modulus (Pa)
-t_start = 0;                % Simulation start time (s)
-dt = 0.005;                 % Time step (s)
-t_stop = 4;                 % Simulation end time (s)
-freq = 0.5;                 % Motor driving frequency (Hz)
 A_theta = deg2rad(20);      % Motor driving amplitude (rad)
 th1_0 = 0.7;                % Hub/Motor initial start angle (rad)
 th2_0 = 2.0;                % Claw support initial start angle (rad)
 th4_0 = 1.0;                % Pad support initial start angle (rad)
+
+% flexure
+b_flex = 20 / 1000;         % flexure width/depth (m)
 % Array of Flexure Thicknesses [Indices 1 to 5] (m)
 h_flex = [2.5; 1.5; 3.0; 1.5; 1.5] / 1000; 
+
+% ridgit link
 % Array of Link Lengths (m)
 % L_vals mapping based on geometric constraints:
 % L1: Hub-to-Claw-Pivot offset (m)
@@ -37,6 +33,16 @@ h_flex = [2.5; 1.5; 3.0; 1.5; 1.5] / 1000;
 % L7: Unused in constraints (m)
 % L8: Pad Support length (m)
 L_vals = ([50; 25; 50; 25; 25; 25; 25; 25] * scale) / 1000; 
+D = 10 / 1000;              % Diameter of rigid link segments (m)
+
+% material
+rho_tpu = 1200;             % TPU density (kg/m^3)
+
+%sim 
+t_start = 0;                % Simulation start time (s)
+dt = 0.005;                 % Time step (s)
+t_stop = 4;                 % Simulation end time (s)
+freq = 0.5;                 % Motor driving frequency (Hz)
 
 %% 2. INITIALIZATION & SYMBOLIC SETUP
 % Calculate mass and inertia for the 5 moving bodies
@@ -80,6 +86,7 @@ C = [x1; y1; ...
      (x4 + 0.5*L_vals(8)*cos(th4)) - (x5 + 0.5*L_vals(6)*cos(th5)); ...           
      (y4 + 0.5*L_vals(8)*sin(th4)) - (y5 + 0.5*L_vals(6)*sin(th5));
      th1 - (th1_0 + theta_driver)];                                               
+
 % Convert symbolic math constraints into numerical functions for the solver
 C_f = matlabFunction(C, 'vars', {q, t, theta_driver}); 
 Cq_f = matlabFunction(jacobian(C,q), 'vars', {q, t, theta_driver}); 
