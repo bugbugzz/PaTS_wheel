@@ -1,4 +1,4 @@
-function [sigma_total, sigma_axial, sigma_bending, SF] = calculateLinkStresses(Qc, b, h_array, yield_strength, L_vals)
+function [sigma_total, sigma_axial, sigma_bending] = calculateLinkStresses(Qc, b, h_array, L_vals)
     [~, num_steps] = size(Qc);
     sigma_axial = zeros(5, num_steps);
     sigma_bending = zeros(5, num_steps);
@@ -32,7 +32,4 @@ function [sigma_total, sigma_axial, sigma_bending, SF] = calculateLinkStresses(Q
         % Total Internal Stress at the weakest point
         sigma_total(i, :) = sigma_axial(i, :) + sigma_bending(i, :);
     end
-    
-    % Safety Factor based on peak total stress
-    SF = yield_strength ./ max(sigma_total, [], 2);
 end

@@ -9,11 +9,12 @@ clear all; close all; clc;
 % Index 4: Pad Base Hinge    (Connects Hub Link 1 to Pad Link 5)
 % Index 5: Pad Tip Hinge     (Connects Base Link 4 to Pad Link 5)
 % -------------------------------------------------------------------------
+% TPU_yield = 20e6;           % TPU 95A yield strength (Pa)
+
 scale = 2.57;               % Multiplier to clear 18cm step (scales base 100mm design)
 b_flex = 20 / 1000;         % Wheel extrusion depth (m)
 L_notch = 8 / 1000;         % Bending zone length for virtual work (m)
 D = 10 / 1000;              % Diameter of rigid link segments (m)
-TPU_yield = 20e6;           % TPU 95A yield strength (Pa)
 rho_tpu = 1200;             % TPU density (kg/m^3)
 E_tpu = 25e6;               % TPU Young's Modulus (Pa)
 t_start = 0;                % Simulation start time (s)
@@ -140,18 +141,18 @@ end
 a_c_sol = [diff(v_c_sol, 1, 2) / dt, [0;0]]; 
 a_p_sol = [diff(v_p_sol, 1, 2) / dt, [0;0]];
 % Run PRBM analysis and fetch safety factors
-[~, s_axial, s_bend, SF] = calculateLinkStresses(Qc, b_flex, h_flex, TPU_yield, L_vals);
+[~, s_axial, s_bend] = calculateLinkStresses(Qc, b_flex, h_flex, L_vals);
 
 %% 6. OUTPUTS, REPORTS & FIGURES
 % 6.1 Console print
 fprintf('\n--- STRESS REPORT: 1.3kg Robot Climbing 18cm Step ---\n');
-fprintf('%-25s | %-12s | %-12s | %-8s\n', 'Flexure Node', 'Axial (MPa)', 'Bending (MPa)', 'SF');
+fprintf('%-25s | %-12s | %-12s\n', 'Flexure Node', 'Axial (MPa)', 'Bending (MPa)');
 fprintf('----------------------------------------------------------------------\n');
 % Array of physical names mapped to Indices 1 through 5 for the console report
 node_names = {'Coupler Hinge (Index 1)','Claw Base Hinge (Index 2)','Claw Tip Hook (Index 3)','Pad Base Hinge (Index 4)', 'Pad Tip Hinge (Index 5)'};
 for i = 1:5
-    fprintf('%-25s | %-12.4f | %-12.4f | %-8.2f\n', ...
-            node_names{i}, max(s_axial(i,:))/1e6, max(s_bend(i,:))/1e6, SF(i));
+    fprintf('%-25s | %-12.4f | %-12.4f\n', ...
+            node_names{i}, max(s_axial(i,:))/1e6, max(s_bend(i,:))/1e6);
 end
 
 printSystemParameters(L_vals, b_flex, h_flex, scale);
