@@ -1,95 +1,87 @@
-function plotConfiguration(qSol, time, L_vals, plot_stepsize)
-%{
-This function animates the 5-body PaTS-Wheel mechanism over time.
-INPUT:
-    qSol          Matrix of generalized coordinates (15 x TimeSteps)
-    time          Array of time values
-    L_vals        Link lengths
-    plot_stepsize How many time steps to skip between frames (for speed)
-%}
-    figure('Name', 'PaTS-Wheel Mechanism Animation', 'NumberTitle', 'off');
-    set(gcf, 'Position', [100, 100, 800, 500]); % Make window nice and wide
+% -------------------------------------------------------------------------
+% NESTED ANIMATION FUNCTION (Matches Your Custom Colors & Labels!)
+function plotConfiguration(qSol, time, L_vals, scale, plot_stepsize)
+    figure('Name', 'PaTS-Wheel Mechanism Animation', 'NumberTitle', 'off', 'Color', 'w');
+    set(gcf, 'Position', [100, 100, 950, 550]); % Made slightly wider for text labels
 
-    % Loop through the solution over time
+    % --- EXACT GEOMETRIC TRIANGLE SOLVER ---
+    L6 = 0.0170; claw_out = 0.0320; claw_in  = 0.0250;
+    x_c = (L6^2 + claw_out^2 - claw_in^2) / (2 * L6);
+    y_c = sqrt(claw_out^2 - x_c^2);
+    
+    L7 = 0.0180; pad_out = 0.0375; pad_in  = 0.0260;
+    x_p = (L7^2 + pad_out^2 - pad_in^2) / (2 * L7);
+    y_p = sqrt(pad_out^2 - x_p^2);
+
     for i = 1:plot_stepsize:length(time)
-        % 1. Extract coordinates for this time step
         q = qSol(:, i);
-        x1=q(1); y1=q(2); th1=q(3);    % Body 1: Coupler
-        x2=q(4); y2=q(5); th2=q(6);    % Body 2: Claw Support
-        x3=q(7); y3=q(8); th3=q(9);    % Body 3: Claw Tip
-        x4=q(10);y4=q(11);th4=q(12);   % Body 4: Pad Support
-        x5=q(13);y5=q(14);th5=q(15);   % Body 5: Pad Tip
+        x1=q(1); y1=q(2); th1=q(3);    
+        x2=q(4); y2=q(5); th2=q(6);    
+        x4=q(10);y4=q(11);th4=q(12);   
+        th3=q(9); th5=q(15); 
 
-        % 2. Calculate Joint Positions
-        % Fixed Ground Points
-        O  = [0, 0];                        % Origin (b4/a1)
-        b1 = [-L_vals(1), 0];               % Claw Ground Pin
-        a4 = [L_vals(3), 0];                % Pad Ground Pin
+        O  = [0, 0];                        
+        b1 = [-L_vals(1), 0];               
+        a4 = [L_vals(3), 0];                
 
-        % Body 1 Joints (Central Coupler) - TRUE RIGID V-SHAPE
         b3 = [x1 + L_vals(4)*cos(th1 + pi - 1.4), y1 + L_vals(4)*sin(th1 + pi - 1.4)];
-        a2 = [x1 + L_vals(2)*cos(th1), y1 + L_vals(2)*sin(th1)];
+        a2 = [x1 + L_vals(2)*cos(th1), y1 + L_vals(2)*sin(th1)]; 
+        b2 = [x2 + 0.5*L_vals(5)*cos(th2), y2 + 0.5*L_vals(5)*sin(th2)]; 
+        a3 = [x4 + 0.5*L_vals(8)*cos(th4), y4 + 0.5*L_vals(8)*sin(th4)]; 
 
-        % Body 2 Joint (Claw Support Tip)
-        b2 = [x2 + 0.5*L_vals(5)*cos(th2), y2 + 0.5*L_vals(5)*sin(th2)];
+        % Calculate Star Tips 
+        c = b2 + (x_c * scale) * [cos(th3), sin(th3)] + (y_c * scale) * [-sin(th3), cos(th3)];
+        p = a3 + (x_p * scale) * [-cos(th5), -sin(th5)] + (y_p * scale) * [-sin(th5), cos(th5)];
 
-        % Body 4 Joint (Pad Support Tip)
-        a3 = [x4 + 0.5*L_vals(8)*cos(th4), y4 + 0.5*L_vals(8)*sin(th4)];
-
-        % Calculate aesthetic tips for the Claw (c) and Pad (p)
-        % Using true +90 degree perpendicular projection to force them UP and INWARD
-        tip_height = L_vals(6); 
-
-        % Claw tip (c) anchored to b3, pointing UP (+) and INWARD (-)
-        c = [b3(1) - tip_height*sin(th3), b3(2) + tip_height*cos(th3)]; 
-
-        % Pad tip (p) anchored to a2, pointing UP (+) and INWARD (-)
-        p = [a2(1) - tip_height*sin(th5), a2(2) + tip_height*cos(th5)];
-
-        % 3. Draw the Mechanism
-        clf; % Clear previous frame
-        hold on;
-        grid on;
-        axis equal;
-
-        % Set plot limits 
-        axis([-0.20 0.20 -0.05 0.25]);
+        clf; hold on; grid on; axis equal;
+        axis([-0.25 0.25 -0.05 0.25]); % Expanded axis to fit text labels
         title(sprintf('PaTS-Wheel Simulation | Time = %.2f s', time(i)));
         xlabel('X Position [m]'); ylabel('Y Position [m]');
 
-        % --- Plot Links as Polygons/Lines ---
+        % --- 1. DRAW DASHED LINES TO TIPS ---
+        plot([b2(1), c(1)], [b2(2), c(2)], '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
+        plot([b3(1), c(1)], [b3(2), c(2)], '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
+        plot([a3(1), p(1)], [a3(2), p(2)], '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
+        plot([a2(1), p(1)], [a2(2), p(2)], '--', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
 
-        % Body 1: Central Inverting Coupler (Triangle: b3 - O - a2)
-        plot([b3(1), O(1), a2(1), b3(1)], [b3(2), O(2), a2(2), b3(2)], 'k-', 'LineWidth', 2.5);
-        fill([b3(1), O(1), a2(1)], [b3(2), O(2), a2(2)], [0.8 0.8 0.8], 'FaceAlpha', 0.5); % Gray fill
+        % --- 2. DRAW MAIN LINKAGE BARS ---
+        % Link 1: Coupler (Black V-Shape)
+        plot([b3(1), O(1), a2(1)], [b3(2), O(2), a2(2)], 'k-', 'LineWidth', 4);
+        % Link 2: Claw Support (Blue)
+        plot([b1(1), b2(1)], [b1(2), b2(2)], 'b-', 'LineWidth', 4);
+        % Link 3: Claw Base (Cyan)
+        plot([b2(1), b3(1)], [b2(2), b3(2)], 'c-', 'LineWidth', 4);
+        % Link 4: Pad Support (Red)
+        plot([a4(1), a3(1)], [a4(2), a3(2)], 'r-', 'LineWidth', 4);
+        % Link 5: Pad Base (Magenta)
+        plot([a3(1), a2(1)], [a3(2), a2(2)], 'm-', 'LineWidth', 4);
 
-        % Body 2: Claw Support (Line: b1 - b2)
-        plot([b1(1), b2(1)], [b1(2), b2(2)], 'b-', 'LineWidth', 2);
+        % Ground Base Line
+        plot([-0.20, 0.20], [0, 0], 'k--', 'LineWidth', 1.5);
 
-        % Body 4: Pad Support (Line: a4 - a3)
-        plot([a4(1), a3(1)], [a4(2), a3(2)], 'r-', 'LineWidth', 2);
-
-        % Body 3: Claw Tip (Triangle: b2 - c - b3)
-        plot([b2(1), c(1), b3(1), b2(1)], [b2(2), c(2), b3(2), b2(2)], 'b-', 'LineWidth', 2);
-        fill([b2(1), c(1), b3(1)], [b2(2), c(2), b3(2)], 'b', 'FaceAlpha', 0.2);
-
-        % Body 5: Pad Tip (Triangle: a2 - p - a3)
-        plot([a2(1), p(1), a3(1), a2(1)], [a2(2), p(2), a3(2), a2(2)], 'r-', 'LineWidth', 2);
-        fill([a2(1), p(1), a3(1)], [a2(2), p(2), a3(2)], 'r', 'FaceAlpha', 0.2);
-
-        % --- Plot Joints (Pins) ---
+        % --- 3. DRAW JOINTS AND MARKERS ---
+        % Yellow circles with black outlines
         joints_x = [O(1), b1(1), a4(1), b3(1), a2(1), b2(1), a3(1)];
         joints_y = [O(2), b1(2), a4(2), b3(2), a2(2), b2(2), a3(2)];
-        plot(joints_x, joints_y, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 5); % Black dots for pins
+        plot(joints_x, joints_y, 'ko', 'MarkerFaceColor', 'y', 'MarkerSize', 8, 'LineWidth', 1.5); 
+        plot(joints_x, joints_y, 'k.', 'MarkerSize', 5); 
 
-        % Ground Base Line (Visual reference)
-        plot([-0.08, 0.08], [0, 0], 'k--', 'LineWidth', 1);
+        % Center crosshairs (+)
+        plot((b1(1)+b2(1))/2, (b1(2)+b2(2))/2, 'k+', 'MarkerSize', 8, 'LineWidth', 2);
+        plot((a4(1)+a3(1))/2, (a4(2)+a3(2))/2, 'k+', 'MarkerSize', 8, 'LineWidth', 2);
+        plot((b2(1)+b3(1))/2, (b2(2)+b3(2))/2, 'k+', 'MarkerSize', 8, 'LineWidth', 2);
+        plot((a3(1)+a2(1))/2, (a3(2)+a2(2))/2, 'k+', 'MarkerSize', 8, 'LineWidth', 2);
 
-        % --- Plot Specific Tip Markers ---
-        % Green star for the Claw Tip (The Hook)
-        plot(c(1), c(2), 'g*', 'MarkerSize', 10, 'LineWidth', 1.5); 
-        % Magenta star for the Pad Tip (The Push Point)
-        plot(p(1), p(2), 'm*', 'MarkerSize', 10, 'LineWidth', 1.5); 
+        % The Stars!
+        plot(c(1), c(2), 'g*', 'MarkerSize', 10, 'LineWidth', 2); 
+        plot(p(1), p(2), 'm*', 'MarkerSize', 10, 'LineWidth', 2); 
+
+        % --- 4. TEXT LABELS ---
+        text(0, -0.02, 'Link 1 (coupler)', 'HorizontalAlignment', 'center', 'FontSize', 11, 'FontWeight', 'bold');
+        text((b1(1)+b2(1))/2 - 0.01, (b1(2)+b2(2))/2, 'Link 2 (Claw Support)', 'HorizontalAlignment', 'right', 'FontSize', 11, 'FontWeight', 'bold');
+        text((a4(1)+a3(1))/2 + 0.01, (a4(2)+a3(2))/2, 'Link 4 (Pad Support)', 'HorizontalAlignment', 'left', 'FontSize', 11, 'FontWeight', 'bold');
+        text((b2(1)+b3(1))/2, (b2(2)+b3(2))/2 + 0.02, 'Link 3 (Claw Tip)', 'HorizontalAlignment', 'center', 'FontSize', 11, 'FontWeight', 'bold');
+        text((a3(1)+a2(1))/2, (a3(2)+a2(2))/2 + 0.02, 'Link 5 (Pad Tip)', 'HorizontalAlignment', 'center', 'FontSize', 11, 'FontWeight', 'bold');
 
         drawnow;
     end
