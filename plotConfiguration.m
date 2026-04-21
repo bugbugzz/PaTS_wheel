@@ -58,24 +58,61 @@ INPUT:
         xlabel('X Position [m]'); ylabel('Y Position [m]');
 
         % --- Plot Links as Polygons/Lines ---
+% --- Plot SKELETON / BEAM Model ---
+        
+        % Body 1: The Hub Beams (Lines radiating from the motor to the hinges)
+        plot([O(1), b3(1)], [O(2), b3(2)], 'k-', 'LineWidth', 3); % Hub to Claw Hinge
+        plot([O(1), a2(1)], [O(2), a2(2)], 'k-', 'LineWidth', 3); % Hub to Pad Hinge
+        
+        % Body 2: Claw Support Beam
+        plot([b1(1), b2(1)], [b1(2), b2(2)], 'b-', 'LineWidth', 3);
+        
+        % Body 3: Claw Base Beam (Connecting Support to Hub)
+        plot([b2(1), b3(1)], [b2(2), b3(2)], 'c-', 'LineWidth', 3);
+        
+        % Body 4: Pad Support Beam
+        plot([a4(1), a3(1)], [a4(2), a3(2)], 'r-', 'LineWidth', 3);
+        
+        % Body 5: Pad Base Beam (Connecting Support to Hub)
+        plot([a2(1), a3(1)], [a2(2), a3(2)], 'm-', 'LineWidth', 3);
+        % --- Plot the Tips (Light Dotted Lines) ---
+        % Calculate tip positions based on Body 3 and Body 5 angles
+        tip_height = L_vals(6); 
+        c = [b3(1) - tip_height*sin(th3), b3(2) + tip_height*cos(th3)]; % Claw Tip
+        p = [a2(1) - tip_height*sin(th5), a2(2) + tip_height*cos(th5)]; % Pad Tip
 
-        % Body 1: Central Inverting Coupler (Triangle: b3 - O - a2)
-        plot([b3(1), O(1), a2(1), b3(1)], [b3(2), O(2), a2(2), b3(2)], 'k-', 'LineWidth', 2.5);
-        fill([b3(1), O(1), a2(1)], [b3(2), O(2), a2(2)], [0.8 0.8 0.8], 'FaceAlpha', 0.5); % Gray fill
+        % Draw light grey dotted lines from the hinges to the tips
+        % Claw Tip Geometry (Connecting b2 -> c -> b3)
+        plot([b2(1), c(1), b3(1)], [b2(2), c(2), b3(2)], ':', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.5);
+        
+        % Pad Tip Geometry (Connecting a2 -> p -> a3)
+        plot([a2(1), p(1), a3(1)], [a2(2), p(2), a3(2)], ':', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.5);
 
-        % Body 2: Claw Support (Line: b1 - b2)
-        plot([b1(1), b2(1)], [b1(2), b2(2)], 'b-', 'LineWidth', 2);
+        % Mark the extreme tips with colored stars
+        plot(c(1), c(2), 'g*', 'MarkerSize', 8, 'LineWidth', 1.5); % Claw Hook (Green)
+        plot(p(1), p(2), 'm*', 'MarkerSize', 8, 'LineWidth', 1.5); % Pad Push (Magenta)
 
-        % Body 4: Pad Support (Line: a4 - a3)
-        plot([a4(1), a3(1)], [a4(2), a3(2)], 'r-', 'LineWidth', 2);
-
-        % Body 3: Claw Tip (Triangle: b2 - c - b3)
-        plot([b2(1), c(1), b3(1), b2(1)], [b2(2), c(2), b3(2), b2(2)], 'b-', 'LineWidth', 2);
-        fill([b2(1), c(1), b3(1)], [b2(2), c(2), b3(2)], 'b', 'FaceAlpha', 0.2);
-
-        % Body 5: Pad Tip (Triangle: a2 - p - a3)
-        plot([a2(1), p(1), a3(1), a2(1)], [a2(2), p(2), a3(2), a2(2)], 'r-', 'LineWidth', 2);
-        fill([a2(1), p(1), a3(1)], [a2(2), p(2), a3(2)], 'r', 'FaceAlpha', 0.2);
+        % --- Plot Joints (Pins) ---
+        joints_x = [O(1), b1(1), a4(1), b3(1), a2(1), b2(1), a3(1)];
+        joints_y = [O(2), b1(2), a4(2), b3(2), a2(2), b2(2), a3(2)];
+        plot(joints_x, joints_y, 'ko', 'MarkerFaceColor', 'y', 'MarkerSize', 8); % Yellow dots for pins
+        % % Body 1: Central Inverting Coupler (Triangle: b3 - O - a2)
+        % plot([b3(1), O(1), a2(1), b3(1)], [b3(2), O(2), a2(2), b3(2)], 'k-', 'LineWidth', 2.5);
+        % fill([b3(1), O(1), a2(1)], [b3(2), O(2), a2(2)], [0.8 0.8 0.8], 'FaceAlpha', 0.5); % Gray fill
+        % 
+        % % Body 2: Claw Support (Line: b1 - b2)
+        % plot([b1(1), b2(1)], [b1(2), b2(2)], 'b-', 'LineWidth', 2);
+        % 
+        % % Body 4: Pad Support (Line: a4 - a3)
+        % plot([a4(1), a3(1)], [a4(2), a3(2)], 'r-', 'LineWidth', 2);
+        % 
+        % % Body 3: Claw Tip (Triangle: b2 - c - b3)
+        % plot([b2(1), c(1), b3(1), b2(1)], [b2(2), c(2), b3(2), b2(2)], 'b-', 'LineWidth', 2);
+        % fill([b2(1), c(1), b3(1)], [b2(2), c(2), b3(2)], 'b', 'FaceAlpha', 0.2);
+        % 
+        % % Body 5: Pad Tip (Triangle: a2 - p - a3)
+        % plot([a2(1), p(1), a3(1), a2(1)], [a2(2), p(2), a3(2), a2(2)], 'r-', 'LineWidth', 2);
+        % fill([a2(1), p(1), a3(1)], [a2(2), p(2), a3(2)], 'r', 'FaceAlpha', 0.2);
 
         % --- Plot Joints (Pins) ---
         joints_x = [O(1), b1(1), a4(1), b3(1), a2(1), b2(1), a3(1)];
@@ -90,7 +127,23 @@ INPUT:
         plot(c(1), c(2), 'g*', 'MarkerSize', 10, 'LineWidth', 1.5); 
         % Magenta star for the Pad Tip (The Push Point)
         plot(p(1), p(2), 'm*', 'MarkerSize', 10, 'LineWidth', 1.5); 
-
+% --- Plot Centers of Mass (CoM) ---
+        % The unpacked variables (x1, y1), (x2, y2), etc., represent the exact CoM
+        com_x = [x1, x2, x3, x4, x5];
+        com_y = [y1, y2, y3, y4, y5];
+        
+        % Draw a crosshair at every Center of Mass
+        plot(com_x, com_y, 'k+', 'MarkerSize', 8, 'LineWidth', 2); 
+        
+        % --- Add Text Labels for Link Indices ---
+        % Offset the text slightly in the Y direction so it doesn't cover the crosshair
+        y_offset = 0.015; 
+        
+        text(x1, y1 - y_offset, 'Link 1 (coupler)', 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
+        text(x2 - 0.01, y2, 'Link 2 (Claw Support)', 'HorizontalAlignment', 'right', 'FontWeight', 'bold');
+        text(x3, y3 + y_offset, 'Link 3 (Claw Tip)', 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
+        text(x4 + 0.01, y4, 'Link 4 (Pad Support)', 'HorizontalAlignment', 'left', 'FontWeight', 'bold');
+        text(x5, y5 + y_offset, 'Link 5 (Pad Tip)', 'HorizontalAlignment', 'center', 'FontWeight', 'bold');
         drawnow;
     end
 end

@@ -10,7 +10,7 @@ clear all; close all; clc;
 % Index 5: Pad Tip Hinge     (Connects Base Link 4 to Pad Link 5)
 % -------------------------------------------------------------------------
 % geometry
-scale = 2.57;               % Multiplier to clear 18cm step (scales base 100mm design)
+scale = 2.57;               % Multiplier to vary size to clear a 18cm obstacle
 A_theta = deg2rad(20);      % Motor driving amplitude (rad)
 th1_0 = 0.7;                % Hub/Motor initial start angle (rad)
 th2_0 = 2.0;                % Claw support initial start angle (rad)
